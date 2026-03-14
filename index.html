@@ -2,7 +2,7 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=0.0">
     <title>...</title>
     <style>
         * {
@@ -96,7 +96,7 @@
             opacity: 0 !important;
         }
 
-        /* Stage 2: Rotation Warning */
+        /* Stage 2: Rotation Warning - MOBILE ONLY */
         #stage2 {
             background: #000;
         }
@@ -122,7 +122,7 @@
             object-fit: cover;
         }
 
-        /* Stage 4: Final Message */
+        /* Stage 4: Final Message - MOBILE ONLY */
         #stage4 {
             background: rgba(0, 0, 0, 0.85);
         }
@@ -244,6 +244,13 @@
             opacity: 1;
         }
 
+        /* Desktop message (shown when on PC) */
+        .desktop-message {
+            color: #fff;
+            text-align: center;
+            max-width: 80%;
+        }
+
         /* Responsive */
         @media (max-width: 480px) {
             .disclaimer-text, .rotation-text {
@@ -285,7 +292,7 @@
         <button class="ddlc-button" onclick="startExperience()">Tamam</button>
     </div>
 
-    <!-- Stage 2: Rotation Warning -->
+    <!-- Stage 2: Rotation Warning (Mobile Only) -->
     <div id="stage2" class="layer">
         <p class="rotation-text">Daha iyi bir deneyim için lütfen telefonunuzu yatay (landscape) moda çevirin ve Tamam'a basın.</p>
         <button class="ddlc-button" onclick="startVideo()">Tamam</button>
@@ -298,7 +305,7 @@
         </video>
     </div>
 
-    <!-- Stage 4: Final Message -->
+    <!-- Stage 4: Final Message (Mobile Only) -->
     <div id="stage4" class="layer">
         <div class="message-container">
             <div id="popup1" class="ddlc-popup">
@@ -339,6 +346,9 @@
         const fadeOverlay = document.getElementById('fadeOverlay');
         const finalText = document.querySelector('.final-text');
 
+        // Detect if user is on mobile phone
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
         // Stage 1: Start Experience
         function startExperience() {
             // Start audio with fade in
@@ -359,19 +369,42 @@
             // Zoom animation
             stage1.classList.add('zoom-out');
             
-            // Transition to stage 2 after zoom
+            // Transition after zoom
             setTimeout(() => {
                 stage1.classList.remove('active');
                 stage1.style.zIndex = '-1';
-                stage2.classList.add('active');
+                
+                if (isMobile) {
+                    // Mobile: Show rotation warning first
+                    stage2.classList.add('active');
+                } else {
+                    // Desktop: Skip rotation warning, go straight to video
+                    startVideo();
+                }
             }, 2000);
         }
 
-        // Stage 2: Start Video
+        // Stage 2/3: Start Video (0.8 speed + landscape lock for mobile)
         function startVideo() {
+            // Hide stage2 if coming from mobile path
             stage2.classList.remove('active');
             stage2.style.zIndex = '-1';
+            
             stage3.classList.add('active');
+            
+            // Set video playback speed to 0.8
+            videoPlayer.playbackRate = 0.8;
+            
+            // For mobile: Force landscape orientation
+            if (isMobile && screen.orientation && screen.orientation.lock) {
+                screen.orientation.lock('landscape').catch(e => {
+                    console.log('Orientation lock failed:', e);
+                    // Fallback: request fullscreen which often helps with landscape
+                    if (videoPlayer.requestFullscreen) {
+                        videoPlayer.requestFullscreen().catch(err => console.log('Fullscreen failed:', err));
+                    }
+                });
+            }
             
             // Play video
             videoPlayer.play().catch(e => console.log('Video play failed:', e));
@@ -380,11 +413,19 @@
             videoPlayer.addEventListener('ended', onVideoEnded);
         }
 
-        // Video ended - show final message
+        // Video ended - show final message (ONLY ON MOBILE)
         function onVideoEnded() {
             stage3.classList.remove('active');
             stage3.style.zIndex = '-1';
-            stage4.classList.add('active');
+            
+            if (isMobile) {
+                // Mobile: Show the DDLC popup messages
+                stage4.classList.add('active');
+            } else {
+                // Desktop: Just end with black screen (no popup)
+                document.body.innerHTML = '<div style="color: #333; text-align: center; margin-top: 50vh; font-family: sans-serif;">Bu deneyim mobil cihazlar için tasarlanmıştır.</div>';
+                document.body.style.background = '#000';
+            }
         }
 
         // Popup 2
