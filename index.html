@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>...</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --ddlc-pink: #ffb3d9;
+            --ddlc-pink-dark: #ff99cc;
+            --ddlc-pink-border: #cc6699;
+            --ddlc-bg: #ffe6f0;
+            --ddlc-text: #333333;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            font-weight: 300;
+            letter-spacing: 2px;
+            line-height: 1.8;
+            overflow: hidden;
+            background: #000;
+        }
+
+        /* Shell System - All Layers */
+        .layer {
+            position: fixed;
+            width: 100vw;
+            height: 100vh;
+            top: 0;
+            left: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            transition: all 2s ease-in-out;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .layer.active {
+            opacity: 1;
+            pointer-events: all;
+            z-index: 10;
+        }
+
+        /* Stage 1: Disclaimer */
+        #stage1 {
+            background: #000;
+            z-index: 20;
+        }
+
+        #stage1.active {
+            opacity: 1;
+        }
+
+        .disclaimer-text {
+            color: #fff;
+            font-size: 1.1rem;
+            text-align: center;
+            max-width: 90%;
+            padding: 0 20px;
+            transition: opacity 2s ease-in-out;
+        }
+
+        .ddlc-button {
+            margin-top: 40px;
+            padding: 12px 40px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 1rem;
+            letter-spacing: 3px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 400;
+            border-radius: 25px;
+        }
+
+        .ddlc-button:hover {
+            background: rgba(255, 255, 255, 0.9);
+            color: #000;
+            border-color: #fff;
+        }
+
+        /* Zoom Animation Class */
+        .zoom-out {
+            transform: scale(3) translateY(-20%);
+            opacity: 0 !important;
+        }
+
+        /* Stage 2: Rotation Warning */
+        #stage2 {
+            background: #000;
+        }
+
+        .rotation-text {
+            color: #fff;
+            font-size: 1rem;
+            text-align: center;
+            max-width: 85%;
+            padding: 0 20px;
+        }
+
+        /* Stage 3: Video */
+        #stage3 {
+            background: #000;
+            padding: 0;
+            margin: 0;
+        }
+
+        #videoPlayer {
+            width: 100vw;
+            height: 100vh;
+            object-fit: cover;
+        }
+
+        /* Stage 4: Final Message */
+        #stage4 {
+            background: rgba(0, 0, 0, 0.85);
+        }
+
+        .message-container {
+            max-width: 90%;
+            width: 500px;
+        }
+
+        /* DDLC Style Popup */
+        .ddlc-popup {
+            background: var(--ddlc-bg);
+            border: 3px solid var(--ddlc-pink-border);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 0 30px rgba(255, 153, 204, 0.3);
+            text-align: center;
+        }
+
+        .ddlc-popup-text {
+            color: var(--ddlc-text);
+            font-size: 1rem;
+            line-height: 1.8;
+            margin-bottom: 25px;
+        }
+
+        .ddlc-ok-button {
+            background: var(--ddlc-pink-dark);
+            border: 2px solid var(--ddlc-pink-border);
+            color: #fff;
+            padding: 10px 35px;
+            font-size: 1rem;
+            letter-spacing: 2px;
+            cursor: pointer;
+            border-radius: 20px;
+            transition: all 0.3s ease;
+            font-weight: 400;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+        }
+
+        .ddlc-ok-button:hover {
+            background: var(--ddlc-pink-border);
+            transform: scale(1.05);
+        }
+
+        /* Choice Buttons */
+        .choice-container {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+
+        .choice-button {
+            padding: 12px 30px;
+            font-size: 0.95rem;
+            letter-spacing: 2px;
+            cursor: pointer;
+            border-radius: 20px;
+            transition: all 0.3s ease;
+            font-weight: 400;
+            min-width: 140px;
+        }
+
+        .choice-yes {
+            background: var(--ddlc-pink-dark);
+            border: 2px solid var(--ddlc-pink-border);
+            color: #fff;
+        }
+
+        .choice-yes:hover {
+            background: var(--ddlc-pink-border);
+            transform: scale(1.05);
+        }
+
+        .choice-no {
+            background: transparent;
+            border: 2px solid var(--ddlc-pink-border);
+            color: var(--ddlc-text);
+        }
+
+        .choice-no:hover {
+            background: rgba(204, 102, 153, 0.1);
+        }
+
+        /* Fade to black overlay */
+        #fadeOverlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: #000;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 100;
+            transition: opacity 3s ease-in-out;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #fadeOverlay.active {
+            opacity: 1;
+        }
+
+        .final-text {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.9rem;
+            text-align: center;
+            max-width: 80%;
+            padding: 20px;
+            opacity: 0;
+            transition: opacity 2s ease-in-out;
+        }
+
+        .final-text.show {
+            opacity: 1;
+        }
+
+        /* Responsive */
+        @media (max-width: 480px) {
+            .disclaimer-text, .rotation-text {
+                font-size: 0.95rem;
+            }
+            
+            .ddlc-popup {
+                padding: 20px;
+                margin: 0 15px;
+            }
+            
+            .ddlc-popup-text {
+                font-size: 0.9rem;
+            }
+            
+            .choice-container {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .choice-button {
+                width: 100%;
+                max-width: 200px;
+            }
+        }
+
+        /* Hide scrollbar */
+        ::-webkit-scrollbar {
+            display: none;
+        }
+    </style>
+<base target="_blank">
+</head>
+<body>
+
+    <!-- Stage 1: Disclaimer -->
+    <div id="stage1" class="layer active">
+        <p class="disclaimer-text">Bu deneyimi yalnız başlatın.<br>Lütfen etrafınızda kimse yokken 'Tamam'a basın.</p>
+        <button class="ddlc-button" onclick="startExperience()">Tamam</button>
+    </div>
+
+    <!-- Stage 2: Rotation Warning -->
+    <div id="stage2" class="layer">
+        <p class="rotation-text">Daha iyi bir deneyim için lütfen telefonunuzu yatay (landscape) moda çevirin ve Tamam'a basın.</p>
+        <button class="ddlc-button" onclick="startVideo()">Tamam</button>
+    </div>
+
+    <!-- Stage 3: Video -->
+    <div id="stage3" class="layer">
+        <video id="videoPlayer" playsinline>
+            <source src="videos/video.mp4" type="video/mp4">
+        </video>
+    </div>
+
+    <!-- Stage 4: Final Message -->
+    <div id="stage4" class="layer">
+        <div class="message-container">
+            <div id="popup1" class="ddlc-popup">
+                <p class="ddlc-popup-text">Humeyra. Bunu sana yüz yüze söylemeyi isterdim, ama artık daha fazla beklemeye dayanamayacağım.</p>
+                <button class="ddlc-ok-button" onclick="showPopup2()">Tamam</button>
+            </div>
+            
+            <div id="popup2" class="ddlc-popup" style="display: none;">
+                <p class="ddlc-popup-text">Ayrı kaldığımız bu süre, birlikteliğin asla getiremeyeceği bir netlik getirdiğine inanıyorum. Şimdi görüyorum ki bu iş sadece hissetmekten ibaret değil; her gün birbirini seçmek ve birlikte bir şeyler inşa etmek. Geçmişte ikimiz de eksik biliyorduk, şimdi daha biliyoruz.</p>
+                <button class="ddlc-ok-button" onclick="showPopup3()">Tamam</button>
+            </div>
+            
+            <div id="popup3" class="ddlc-popup" style="display: none;">
+                <p class="ddlc-popup-text">Eğer sen de bu yolda benimle yürümeye hazırsan, bu sefer doğru temellerle başlayalım mı? Yani, Humeyra. Benimle çıkar mısın?</p>
+                <div class="choice-container">
+                    <button class="choice-button choice-yes" onclick="handleYes()">Evet, başlayalım</button>
+                    <button class="choice-button choice-no" onclick="handleNo()">Hayır</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Fade Overlay for No response -->
+    <div id="fadeOverlay">
+        <p class="final-text">O zaman bu da bir cevap. Yine de bu yolculukta öğrettiklerin için teşekkürler. İyi ki varsın.</p>
+    </div>
+
+    <!-- Audio Element -->
+    <audio id="bgMusic" src="songs/lovestory.mp3"></audio>
+
+    <script>
+        const stage1 = document.getElementById('stage1');
+        const stage2 = document.getElementById('stage2');
+        const stage3 = document.getElementById('stage3');
+        const stage4 = document.getElementById('stage4');
+        const videoPlayer = document.getElementById('videoPlayer');
+        const bgMusic = document.getElementById('bgMusic');
+        const fadeOverlay = document.getElementById('fadeOverlay');
+        const finalText = document.querySelector('.final-text');
+
+        // Stage 1: Start Experience
+        function startExperience() {
+            // Start audio with fade in
+            bgMusic.volume = 0;
+            bgMusic.play().catch(e => console.log('Audio play failed:', e));
+            
+            // Fade in audio over 4 seconds
+            let volume = 0;
+            const fadeInterval = setInterval(() => {
+                volume += 0.025;
+                if (volume >= 1) {
+                    volume = 1;
+                    clearInterval(fadeInterval);
+                }
+                bgMusic.volume = volume;
+            }, 100);
+
+            // Zoom animation
+            stage1.classList.add('zoom-out');
+            
+            // Transition to stage 2 after zoom
+            setTimeout(() => {
+                stage1.classList.remove('active');
+                stage1.style.zIndex = '-1';
+                stage2.classList.add('active');
+            }, 2000);
+        }
+
+        // Stage 2: Start Video
+        function startVideo() {
+            stage2.classList.remove('active');
+            stage2.style.zIndex = '-1';
+            stage3.classList.add('active');
+            
+            // Play video
+            videoPlayer.play().catch(e => console.log('Video play failed:', e));
+            
+            // Listen for video end
+            videoPlayer.addEventListener('ended', onVideoEnded);
+        }
+
+        // Video ended - show final message
+        function onVideoEnded() {
+            stage3.classList.remove('active');
+            stage3.style.zIndex = '-1';
+            stage4.classList.add('active');
+        }
+
+        // Popup 2
+        function showPopup2() {
+            document.getElementById('popup1').style.display = 'none';
+            document.getElementById('popup2').style.display = 'block';
+        }
+
+        // Popup 3
+        function showPopup3() {
+            document.getElementById('popup2').style.display = 'none';
+            document.getElementById('popup3').style.display = 'block';
+        }
+
+        // Handle Yes
+        function handleYes() {
+            // Clear everything
+            document.body.innerHTML = '';
+            document.body.style.background = '#000';
+        }
+
+        // Handle No
+        function handleNo() {
+            fadeOverlay.classList.add('active');
+            
+            setTimeout(() => {
+                finalText.classList.add('show');
+            }, 500);
+            
+            setTimeout(() => {
+                // Try to close window, fallback to black screen
+                try {
+                    window.close();
+                } catch(e) {
+                    document.body.innerHTML = '';
+                    document.body.style.background = '#000';
+                }
+            }, 5500);
+        }
+
+        // Prevent context menu for immersive experience
+        document.addEventListener('contextmenu', (e) => e.preventDefault());
+    </script>
+
+</body>
+</html>
